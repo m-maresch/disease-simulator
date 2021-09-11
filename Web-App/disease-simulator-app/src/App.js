@@ -19,6 +19,64 @@ class App extends Component {
     this.handleSubmit = this.handleSubmit.bind(this)
   }
 
+  handleChange(event) {
+    this.setState({config: event.target.value})
+  }
+
+  handleSubmit(event) {
+    let config = this.getConfig()
+
+    this.setState({config: config.join()})
+    
+    let numberOfPeople = parseInt(config[1]) + 1
+
+    let infectedCounts = Array(numberOfPeople).fill(0)
+    let individuals = Array.from(Array(numberOfPeople).keys()).map(key => "#" + key)
+    individuals[0] = "Initial"
+
+    this.setState({infectedCounts})
+    this.setState({totalNumberOfInfected: 0})
+    this.setState({totalNumberOfInteractions: 0})
+    this.setState({avgNumberOfInteractions: 0})
+    this.setState({individuals}, async () => {
+      await this.startConnection({host: "localhost", port: 7000, config})
+    })
+
+    event.preventDefault()
+  }
+
+  getConfig() {
+    let config = new Array(3)
+    config[0] = "5"
+    config[1] = "100"
+    config[2] = "10"
+
+    if (this.state.config) {
+      config = this.state.config.split(',')
+    }
+
+    let initialNumberOfInfected = parseInt(config[0])
+    let numberOfPeople = parseInt(config[1])
+    let probabilityOfInfection = parseInt(config[2])
+
+    if (numberOfPeople > 2000) {
+      config[1] = "100";
+    }
+    
+    if (initialNumberOfInfected > numberOfPeople) {
+      config[0] = "5";
+      if (numberOfPeople < 5) {
+        config[1] = "5";
+      }
+    }
+
+    if (probabilityOfInfection > 100) {
+      config[2] = "10";
+    }
+
+    return config
+  }
+
   startConnection = async (options) => {
     const socket = await this.connectToGateway(options)
     let subscription
@@ -40,33 +98,14 @@ class App extends Component {
       },
       onNext: (payload) => {
         console.log('Next: %s', payload.data)
-        if (--pending === 0) {
+        if (--pending <= 0) {
           pending = 5;
           subscription.request(pending)
         }
 
-        let config = this.state.config.split(',')
-        let initialNumberOfInfected = parseInt(config[0])
-        let numberOfPeople = parseInt(config[1])
+        let done = this.process(payload)        
 
-        let from = payload.data.from;
-
-        let numberOfInteractions = payload.data.numberOfInteractions <= 1 ? 0 : payload.data.numberOfInteractions
-        let totalNumberOfInteractions = this.state.totalNumberOfInteractions + numberOfInteractions
-
-        let infectedCounts = this.state.infectedCounts
-        infectedCounts[from]++
-        this.setState({infectedCounts: infectedCounts.slice(0)})
-
-        let infectedCountsSum = infectedCounts.reduce((pv, cv) => pv + cv)
-        this.setState({totalNumberOfInfected: infectedCountsSum})
-        this.setState({totalNumberOfInteractions})
-
-        if (infectedCountsSum > initialNumberOfInfected) {
-          this.setState({avgNumberOfInteractions: (totalNumberOfInteractions / (infectedCountsSum - initialNumberOfInfected))})
-        }
-
-        if (infectedCountsSum >= Math.floor(numberOfPeople * 0.99)) {
+        if (done) {
           subscription.cancel()
         }
       },
@@ -96,56 +135,29 @@ class App extends Component {
     return await client.connect()
   }
 
-  handleChange(event) {
-    this.setState({config: event.target.value})
-  }
-
-  handleSubmit(event) {
-    let config = new Array(3)
-    config[0] = "5"
-    config[1] = "100"
-    config[2] = "10"
-
-    if (this.state.config) {
-      config = this.state.config.split(',')
-    }
-
+  process(payload) {
+    let config = this.state.config.split(',')
     let initialNumberOfInfected = parseInt(config[0])
     let numberOfPeople = parseInt(config[1])
-    let probabilityOfInfection = parseInt(config[2])
 
-    if (numberOfPeople > 2000) {
-      config[1] = "100";
+    let from = payload.data.from;
+
+    let numberOfInteractions = payload.data.numberOfInteractions <= 1 ? 0 : payload.data.numberOfInteractions
+    let totalNumberOfInteractions = this.state.totalNumberOfInteractions + numberOfInteractions
+
+    let infectedCounts = this.state.infectedCounts
+    infectedCounts[from]++
+    this.setState({infectedCounts: infectedCounts.slice(0)})
+
+    let infectedCountsSum = infectedCounts.reduce((pv, cv) => pv + cv)
+    this.setState({totalNumberOfInfected: infectedCountsSum})
+    this.setState({totalNumberOfInteractions})
+
+    if (infectedCountsSum > initialNumberOfInfected) {
+      this.setState({avgNumberOfInteractions: (totalNumberOfInteractions / (infectedCountsSum - initialNumberOfInfected))})
     }
-    
-    if (initialNumberOfInfected > numberOfPeople) {
-      config[0] = "5";
-      if (numberOfPeople < 5) {
-        config[1] = "5";
-      }
-    }
 
-    if (probabilityOfInfection > 100) {
-      config[2] = "10";
-    }
-
-    this.setState({config: config.join()})
-    
-    numberOfPeople = parseInt(config[1]) + 1
-
-    let infectedCounts = Array(numberOfPeople).fill(0)
-    let individuals = Array.from(Array(numberOfPeople).keys()).map(key => "#" + key)
-    individuals[0] = "Initial"
-
-    this.setState({infectedCounts})
-    this.setState({totalNumberOfInfected: 0})
-    this.setState({totalNumberOfInteractions: 0})
-    this.setState({avgNumberOfInteractions: 0})
-    this.setState({individuals}, async () => {
-      await this.startConnection({host: "localhost", port: 7000, config})
-    })
-
-    event.preventDefault()
+    return infectedCountsSum >= Math.floor(numberOfPeople * 0.99)
   }
 
   render() {

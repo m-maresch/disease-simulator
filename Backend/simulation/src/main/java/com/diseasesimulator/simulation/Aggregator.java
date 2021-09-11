@@ -131,10 +131,7 @@ public class Aggregator {
 
             int numberOfInteractions = event.getNumberOfInteractions();
 
-            queue.offer("{\"from\":" + fromId +
-                    ",\"infected\":" + infectedId +
-                    ",\"numberOfInteractions\":" + numberOfInteractions + "}"
-            );
+            queue.offer(newMessage(fromId, infectedId, numberOfInteractions));
 
             numberOfInfected++;
 
@@ -147,6 +144,12 @@ public class Aggregator {
 
         private String extractIdFromName(String name) {
             return name.substring(name.lastIndexOf("individual") + "individual".length());
+        }
+
+        private String newMessage(String fromId, String infectedId, int numberOfInteractions) {
+            return "{\"from\":" + fromId +
+                    ",\"infected\":" + infectedId +
+                    ",\"numberOfInteractions\":" + numberOfInteractions + "}";
         }
     }
 }
