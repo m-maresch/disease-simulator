@@ -1,0 +1,11 @@
+version: '2'
+services:
+  rabbitmq-ds:
+    image: rabbitmq:3-management
+    ports:
+    - "5672:5672"
+    - "15672:15672"
+    hostname: rabbitmq-ds
+    environment:
+    - RABBITMQ_DEFAULT_USER=guest
+    - RABBITMQ_DEFAULT_PASS=guest
