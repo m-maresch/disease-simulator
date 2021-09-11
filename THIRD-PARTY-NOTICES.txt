@@ -72,7 +72,6 @@ the License.
 
 5) License Notice for SLF4J
 ---------------------------
-
 Copyright (c) 2004-2017 QOS.ch
 All rights reserved.
 
