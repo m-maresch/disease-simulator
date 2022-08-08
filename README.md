@@ -19,7 +19,7 @@ The Reactive Architecture is based on RSocket, Reactor and Akka:
 
 The Web-App is implemented using React.
 
-The Backend folder contains the API Gateway, the Disease Simulation service and a docker-compose.yml file for spinning up the necessary infrastructure for a development environment. The Web-App can be found in corresponding folder.
+The Backend folder contains the API Gateway, the Disease Simulation service and a docker-compose.yml file for spinning up the necessary infrastructure for a development environment. The Web-App can be found in the corresponding folder.
 
 If you have any questions about the applications or you'd like to know how to run them then feel free to contact me via [mmaresch.com](mmaresch.com).
 
